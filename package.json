@@ -1,0 +1,9 @@
+{
+  "name": "invite",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "build": "npm run build -w @invite/shared && npm run build -w @invite/api",
+    "test": "npm test -w @invite/api"
+  }
+}

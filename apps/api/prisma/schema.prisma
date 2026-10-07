@@ -1,0 +1,184 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  EXPIRED
+  CANCELLED
+  REFUND_PENDING
+  REFUNDED
+}
+
+enum TicketStatus {
+  VALID
+  CHECKED_IN
+  VOID
+}
+
+enum RefundStatus {
+  PENDING
+  SUBMITTED
+  PROCESSED
+  FAILED
+}
+
+enum RefundReason {
+  CUSTOMER_REQUEST
+  EVENT_CANCELLED
+  LATE_PAYMENT
+}
+
+model Organizer {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  events       Event[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Event {
+  id          String           @id @default(uuid())
+  organizerId String
+  organizer   Organizer        @relation(fields: [organizerId], references: [id])
+  title       String
+  description String
+  venue       String
+  city        String
+  startsAt    DateTime
+  endsAt      DateTime
+  status      EventStatus      @default(DRAFT)
+  categories  TicketCategory[]
+  orders      Order[]
+  tickets     Ticket[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([status, startsAt])
+  @@index([organizerId])
+  @@index([city, startsAt])
+}
+
+model TicketCategory {
+  id           String      @id @default(uuid())
+  eventId      String
+  event        Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name         String
+  priceMinor   Int
+  currency     String      @default("NGN")
+  capacity     Int
+  available    Int
+  maxPerOrder  Int         @default(10)
+  salesStartAt DateTime
+  salesEndAt   DateTime
+  items        OrderItem[]
+  tickets      Ticket[]
+
+  @@unique([eventId, name])
+  @@index([eventId])
+}
+
+model Attendee {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  fullName     String
+  phone        String?
+  passwordHash String
+  orders       Order[]
+  tickets      Ticket[]
+  createdAt    DateTime @default(now())
+}
+
+model Order {
+  id                   String      @id @default(uuid())
+  attendeeId           String
+  attendee             Attendee    @relation(fields: [attendeeId], references: [id])
+  eventId              String
+  event                Event       @relation(fields: [eventId], references: [id])
+  status               OrderStatus @default(PENDING)
+  totalMinor           Int
+  currency             String      @default("NGN")
+  paymentRef           String      @unique @default(uuid())
+  paymentUrl           String?
+  paymentInitializedAt DateTime?
+  reconciledAt         DateTime?
+  idempotencyKey       String
+  expiresAt            DateTime
+  paidAt               DateTime?
+  items                OrderItem[]
+  tickets              Ticket[]
+  refund               Refund?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  @@unique([attendeeId, idempotencyKey])
+  @@index([status, expiresAt])
+  @@index([status, paymentInitializedAt])
+  @@index([attendeeId, createdAt])
+  @@index([eventId, status])
+}
+
+model OrderItem {
+  id             String         @id @default(uuid())
+  orderId        String
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  categoryId     String
+  category       TicketCategory @relation(fields: [categoryId], references: [id])
+  quantity       Int
+  unitPriceMinor Int
+
+  @@index([orderId])
+}
+
+model Ticket {
+  id          String         @id @default(uuid())
+  code        String         @unique
+  orderId     String
+  order       Order          @relation(fields: [orderId], references: [id])
+  eventId     String
+  event       Event          @relation(fields: [eventId], references: [id])
+  categoryId  String
+  category    TicketCategory @relation(fields: [categoryId], references: [id])
+  attendeeId  String
+  attendee    Attendee       @relation(fields: [attendeeId], references: [id])
+  status      TicketStatus   @default(VALID)
+  checkedInAt DateTime?
+  createdAt   DateTime       @default(now())
+
+  @@index([attendeeId])
+  @@index([eventId, status])
+  @@index([orderId])
+}
+
+model Refund {
+  id          String       @id @default(uuid())
+  orderId     String       @unique
+  order       Order        @relation(fields: [orderId], references: [id])
+  amountMinor Int
+  reason      RefundReason
+  status      RefundStatus @default(PENDING)
+  restock     Boolean
+  attempts    Int          @default(0)
+  lastError   String?
+  providerRef String?
+  processedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([status, createdAt])
+}
