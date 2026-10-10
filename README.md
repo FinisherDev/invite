@@ -4,7 +4,7 @@ A ticket marketplace API for events in Nigeria: organizers publish events and se
 ticket categories, attendees buy with Paystack and receive QR tickets.
 Built as a portfolio project, with the focus on correctness under load.
 
-**Live demo:** [link] · **API docs:** [link] · [CI](https://github.com/FinisherDev/invite/actions/workflows/ci.yml/badge.svg)
+**Live demo:** [link] · **API docs:** [link] · ![CI](https://github.com/FinisherDev/invite/actions/workflows/ci.yml/badge.svg)
 
 [Screenshot or short screen recording]
 
