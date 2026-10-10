@@ -7,7 +7,7 @@ config({ path: path.resolve(__dirname, '.env.test'), override: true });
 
 export default defineConfig({
   resolve: {
-    alias: { '@ticketly/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts') },
+    alias: { '@invite/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts') },
   },
   test: {
     include: ['test/**/*.test.ts'],

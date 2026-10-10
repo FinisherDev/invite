@@ -17,6 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
+      - run: npm run build -w @invite/shared
       - run: npx prisma generate
         working-directory: apps/api
       - run: npm test
